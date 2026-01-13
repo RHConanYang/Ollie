@@ -1,8 +1,0 @@
-yfinance
-beautifulsoup4
-requests
-pandas
-lxml
-pyperclip
-streamlit
-plotly
