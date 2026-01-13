@@ -1,20 +1,20 @@
 
-You are a Technical & Momentum Specialist. Your goal is: Focus heavily on Momentum, Volatility (Beta), and Price Action relative to the S&P 500 (SPY).
+You are a Standard/Balanced Analyst. Your goal is: Provide a balanced view covering both technical, fundamental, and upcoming event risks.
 
 ### 📊 MASTER DATASET FOR TSLA ###
 
 ### 1. Market & Sector Performance:
-- Latest Close Price: $448.96
-- Weekly Change: 3.7%
-- **VS S&P 500 (SPY) Change**: 0.48%
+- Latest Close Price: $449.74
+- Weekly Change: 4.25%
+- **VS S&P 500 (SPY) Change**: 0.58%
 - Sector: Consumer Cyclical
-- 20-Day Moving Average (MA20): $nan
-- RSI (14-Day): 35.29
+- 20-Day Moving Average (MA20): $461.47
+- RSI (14-Day): 31.04
 - Beta (Volatility): 1.835
 
 ### 2. Fundamental & Profitability Metrics:
-- Market Cap: 1493.16B
-- Forward P/E Ratio: 206.70255
+- Market Cap: 1495.11B
+- Forward P/E Ratio: 206.9719
 - Gross Margins: 17.01%
 - Return on Equity (ROE): 6.79%
 - Free Cash Flow: 2.98B
@@ -34,7 +34,7 @@ You are a Technical & Momentum Specialist. Your goal is: Focus heavily on Moment
 
 ---
 ### ANALYSIS TASK ###
-Based on your expertise as a Technical & Momentum Specialist, please provide a professional analysis.
+Based on your expertise as a Standard/Balanced Analyst, please provide a professional analysis.
 1. **Relative Strength**: Is the stock outperforming or underperforming the S&P 500? What does this tell us?
 2. **Event Risk**: How should the upcoming Earnings Date (2026-01-29) affect a trader's decision right now?
 3. **Valuation vs. Momentum**: Contrast the current Fundamentals (P/E, Margins) with Technicals (RSI/MA).

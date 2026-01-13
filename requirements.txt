@@ -4,3 +4,5 @@ requests
 pandas
 lxml
 pyperclip
+streamlit
+plotly

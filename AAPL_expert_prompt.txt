@@ -1,0 +1,42 @@
+
+You are a Standard/Balanced Analyst. Your goal is: Provide a balanced view covering both technical, fundamental, and upcoming event risks.
+
+### 📊 MASTER DATASET FOR AAPL ###
+
+### 1. Market & Sector Performance:
+- Latest Close Price: $261.73
+- Weekly Change: 0.54%
+- **VS S&P 500 (SPY) Change**: 0.58%
+- Sector: Technology
+- 20-Day Moving Average (MA20): $268.85
+- RSI (14-Day): 28.02
+- Beta (Volatility): 1.093
+
+### 2. Fundamental & Profitability Metrics:
+- Market Cap: 3867.41B
+- Forward P/E Ratio: 28.600403
+- Gross Margins: 46.91%
+- Return on Equity (ROE): 171.42%
+- Free Cash Flow: 78.86B
+- 52-Week Range: $169.21 - $288.62
+
+### 3. Institutional Context & Upcoming Events:
+- **NEXT EARNINGS DATE**: 2026-01-30
+- Analyst Target Price (Mean): $287.82877
+- Analyst Recommendation: Buy
+
+- Recent News Catalysts:
+- The trillion-dollar IPOs investors are watching for in 2026 (Source: Yahoo Finance)
+- Google's market cap hits $4 trillion, cementing its status as an AI trade champion (Source: Yahoo Finance)
+- JPMorgan, Bank of New York Mellon Diverge On Earnings Results (Source: Yahoo Finance)
+- JPMorgan Fourth-Quarter Adjusted Earnings Top Views; CEO Dimon Says Markets Underappreciate Potential Macro Headwinds (Source: Yahoo Finance)
+- Stock Market Today: Dow Falls On Surprise Inflation Report; Delta Dives On Earnings News (Live Coverage) (Source: Yahoo Finance)
+
+---
+### ANALYSIS TASK ###
+Based on your expertise as a Standard/Balanced Analyst, please provide a professional analysis.
+1. **Relative Strength**: Is the stock outperforming or underperforming the S&P 500? What does this tell us?
+2. **Event Risk**: How should the upcoming Earnings Date (2026-01-30) affect a trader's decision right now?
+3. **Valuation vs. Momentum**: Contrast the current Fundamentals (P/E, Margins) with Technicals (RSI/MA).
+4. Provide 3 high-conviction "Buy Reasons" and 3 "Key Risks".
+5. Give a final outlook for the next 5-10 trading days.

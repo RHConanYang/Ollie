@@ -1,0 +1,42 @@
+
+You are a Standard/Balanced Analyst. Your goal is: Provide a balanced view covering both technical, fundamental, and upcoming event risks.
+
+### 📊 MASTER DATASET FOR GOOGL ###
+
+### 1. Market & Sector Performance:
+- Latest Close Price: $337.83
+- Weekly Change: 4.92%
+- **VS S&P 500 (SPY) Change**: 0.58%
+- Sector: Communication Services
+- 20-Day Moving Average (MA20): $315.25
+- RSI (14-Day): 89.14
+- Beta (Volatility): 1.086
+
+### 2. Fundamental & Profitability Metrics:
+- Market Cap: 4091.90B
+- Forward P/E Ratio: 29.998232
+- Gross Margins: 59.17%
+- Return on Equity (ROE): 35.45%
+- Free Cash Flow: 48.00B
+- 52-Week Range: $140.53 - $338.29
+
+### 3. Institutional Context & Upcoming Events:
+- **NEXT EARNINGS DATE**: 2026-02-05
+- Analyst Target Price (Mean): $339.15112
+- Analyst Recommendation: Strong buy
+
+- Recent News Catalysts:
+- The trillion-dollar IPOs investors are watching for in 2026 (Source: Yahoo Finance)
+- Samsung looks to make AI unobtrusive as part 'ambient AI' push (Source: Yahoo Finance)
+- Walmart and Google to introduce Gemini-powered shopping interface (Source: Yahoo Finance)
+- Reddit Stock Initiated With Buy Call On Bullish Advertising Growth, AI Potential (Source: Yahoo Finance)
+- Florida Legislators Renew Push For Bitcoin Strategic Reserve, Undeterred By 2 Failed Attempts (Source: Yahoo Finance)
+
+---
+### ANALYSIS TASK ###
+Based on your expertise as a Standard/Balanced Analyst, please provide a professional analysis.
+1. **Relative Strength**: Is the stock outperforming or underperforming the S&P 500? What does this tell us?
+2. **Event Risk**: How should the upcoming Earnings Date (2026-02-05) affect a trader's decision right now?
+3. **Valuation vs. Momentum**: Contrast the current Fundamentals (P/E, Margins) with Technicals (RSI/MA).
+4. Provide 3 high-conviction "Buy Reasons" and 3 "Key Risks".
+5. Give a final outlook for the next 5-10 trading days.
