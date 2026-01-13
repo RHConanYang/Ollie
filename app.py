@@ -192,9 +192,86 @@ As {persona_name}, provide your high-conviction analysis:
 """
     return prompt
 
+# --- LANGUAGE DICTIONARY ---
+LANG_DICT = {
+    "EN": {
+        "title": "Ollie - Expert Prompt Factory",
+        "market_radar": "Market Radar",
+        "expert_analysis": "Expert Analysis",
+        "manage_watchlist": "⚙️ Manage Watchlist Tickers",
+        "edit_tickers": "Edit tickers (comma separated):",
+        "save_watchlist": "💾 Save Watchlist",
+        "scanning": "Scanning the market...",
+        "radar_hint": "💡 **Pro Tip:** Look for stocks with **Negative Weekly %** but **Oversold RSI** for potential bounce plays.",
+        "select_ticker": "Select Ticker",
+        "persona": "Analyst Persona",
+        "tech_score": "Technical Score",
+        "price": "Price",
+        "rsi": "RSI",
+        "sector": "Sector",
+        "bullish": "Bullish",
+        "bearish": "Bearish",
+        "copy_btn": "📋 Copy Strategy Prompt",
+        "success_copy": "Strategy Copied!",
+        "prompt_header": "Analysis Prompt",
+        "about_recom": "**About Recommendations:** Analyst targets and ratings are from Yahoo Finance.",
+        "earnings_title": "🛡️ Earnings Surprise History:",
+        "condition": "Condition",
+        "status_neutral": "Neutral",
+        "status_overbought": "Overbought",
+        "status_oversold": "Oversold",
+        "prompt_instr": "As {name}, provide your high-conviction analysis:",
+        "prompt_task1": "1. **The 'Earnings Fatigue' Check**: Based on past surprises, how should we position?",
+        "prompt_task2": "2. **Techno-Fundamental Synthesis**: Combine Technical Score with Valuation.",
+        "prompt_task3": "3. **Smart Money**: Analyze Insider/Short sentiment.",
+        "final_caption": "Ollie v6.1 - Professional Multi-Language Terminal"
+    },
+    "TW": {
+        "title": "Ollie - 專業提示詞終端",
+        "market_radar": "市場雷達",
+        "expert_analysis": "深度專家分析",
+        "manage_watchlist": "⚙️ 管理自選名單",
+        "edit_tickers": "編輯代號 (用逗號分隔):",
+        "save_watchlist": "💾 儲存清單",
+        "scanning": "正在掃描市場數據...",
+        "radar_hint": "💡 **專家提示:** 尋找 **週跌幅為負** 但 **RSI 超賣** 的股票，這通常是潛在的反彈機會。",
+        "select_ticker": "選擇股票代號",
+        "persona": "分析師人格",
+        "tech_score": "技術面評分",
+        "price": "目前價格",
+        "rsi": "RSI 指數",
+        "sector": "所屬板塊",
+        "bullish": "看多",
+        "bearish": "看空",
+        "copy_btn": "📋 複製分析提示詞",
+        "success_copy": "分析指令已複製到剪貼簿！",
+        "prompt_header": "專家分析指令 (Prompt)",
+        "about_recom": "**關於建議數據:** 目標價與分析師評等彙整自 Yahoo Finance 專業機構數據。",
+        "earnings_title": "🛡️ 歷史財報數據 (驚喜度):",
+        "condition": "當前狀態",
+        "status_neutral": "中性",
+        "status_overbought": "超買/過熱",
+        "status_oversold": "超賣/低估",
+        "prompt_instr": "請以 {name} 的身份，提供專業的高勝率分析：",
+        "prompt_task1": "1. **財報慣性檢查**: 根據歷史財報驚喜度，這檔股票在下次事件應如何佈局？",
+        "prompt_task2": "2. **技資合一分析**: 結合技術評分與基本面估值，這是一個「陷阱」還是「機會」？",
+        "prompt_task3": "3. **大戶動向**: 分析內部人交易與券賣比所呈現的市場情緒。",
+        "final_caption": "Ollie v6.1 - 專業中英雙語投資終端"
+    }
+}
+
 # --- SIDEBAR ---
-st.sidebar.title("🔍 Ollie Control")
-tab_choice = st.sidebar.radio("Navigate", ["Market Radar", "Expert Analysis"])
+st.sidebar.title("🌍 Language / 語言")
+lang_choice = st.sidebar.selectbox("Select Language", ["English", "繁體中文"])
+L = LANG_DICT["EN"] if lang_choice == "English" else LANG_DICT["TW"]
+
+st.sidebar.markdown("---")
+st.sidebar.title(f"🔍 {L['title']}")
+tab_choice = st.sidebar.radio("Navigate", [L['market_radar'], L['expert_analysis']])
+
+# Reset tab names comparison logic
+is_radar = tab_choice == L['market_radar']
+is_expert = tab_choice == L['expert_analysis']
 
 try:
     with open("watchlist.txt", "r") as f:
@@ -203,8 +280,8 @@ except:
     watchlist = ["AAPL", "TSLA", "NVDA", "GOOGL", "MSFT"]
 
 st.sidebar.markdown("---")
-if tab_choice == "Expert Analysis":
-    selected_symbol = st.sidebar.selectbox("Select Ticker", watchlist)
+if is_expert:
+    selected_symbol = st.sidebar.selectbox(L['select_ticker'], watchlist)
     persona_options = {
         "Warren Buffett": "Value/Moat focus",
         "Cathie Wood": "Innovation/Growth focus",
@@ -213,21 +290,21 @@ if tab_choice == "Expert Analysis":
         "Peter Lynch": "GARP/Stock-picking focus",
         "Jim Cramer": "Momentum/Sentiment focus"
     }
-    selected_persona = st.sidebar.radio("Persona", list(persona_options.keys()))
+    selected_persona = st.sidebar.radio(L['persona'], list(persona_options.keys()))
 else:
     selected_symbol = None
 
 # --- MAIN ---
-st.title(f"📈 Ollie - {tab_choice}")
+st.title(f"📈 {tab_choice}")
 
-if tab_choice == "Market Radar":
-    st.subheader("📡 Live Market Radar")
+if is_radar:
+    st.subheader(L['market_radar'])
     
     # --- Watchlist Management ---
-    with st.expander("⚙️ Manage Watchlist Tickers"):
+    with st.expander(L['manage_watchlist']):
         current_tickers = ", ".join(watchlist)
-        edited_tickers = st.text_area("Edit tickers (comma separated):", current_tickers, height=100)
-        if st.button("💾 Save Watchlist"):
+        edited_tickers = st.text_area(L['edit_tickers'], current_tickers, height=100)
+        if st.button(L['save_watchlist']):
             new_list = [t.strip().upper() for t in edited_tickers.split(",") if t.strip()]
             with open("watchlist.txt", "w") as f:
                 f.write("\n".join(new_list))
@@ -236,7 +313,7 @@ if tab_choice == "Market Radar":
 
     st.markdown("---")
     radar_data = []
-    with st.spinner("Scanning the market..."):
+    with st.spinner(L['scanning']):
         for sym in watchlist:
             try:
                 ticker = yf.Ticker(sym)
@@ -252,82 +329,58 @@ if tab_choice == "Market Radar":
                     price_last_week = hist['Close'].iloc[-5]
                     change_pct = ((price_now - price_last_week) / price_last_week) * 100
                     
+                    cur_rsi = rsi_val.iloc[-1]
+                    status_text = L["status_overbought"] if cur_rsi > 70 else (L["status_oversold"] if cur_rsi < 30 else L["status_neutral"])
+                    
                     radar_data.append({
                         "Ticker": sym,
                         "Price": round(price_now, 2),
                         "Weekly %": round(change_pct, 2),
-                        "RSI (14)": round(rsi_val.iloc[-1], 2),
-                        "Status": "Overbought" if rsi_val.iloc[-1] > 70 else ("Oversold" if rsi_val.iloc[-1] < 30 else "Neutral")
+                        "RSI (14)": round(cur_rsi, 2),
+                        L["condition"]: status_text
                     })
             except:
                 continue
     
     if radar_data:
         df = pd.DataFrame(radar_data)
-        
-        # --- PREMIUM DATAFRAME CONFIG ---
         st.dataframe(
             df,
             column_config={
-                "Ticker": st.column_config.TextColumn("Symbol", help="Stock Ticker"),
-                "Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
-                "Weekly %": st.column_config.NumberColumn(
-                    "Weekly Perf",
-                    format="%.2f%%",
-                    help="Performance over the last 5 trading days"
-                ),
-                "RSI (14)": st.column_config.ProgressColumn(
-                    "Relative Strength (RSI)",
-                    help="RSI > 70 is Overbought, < 30 is Oversold",
-                    format="%.0f",
-                    min_value=0,
-                    max_value=100,
-                ),
-                "Status": st.column_config.TextColumn("Condition")
+                "Ticker": st.column_config.TextColumn("Symbol"),
+                "Price": st.column_config.NumberColumn(L["price"], format="$%.2f"),
+                "Weekly %": st.column_config.NumberColumn("Weekly %", format="%.2f%%"),
+                "RSI (14)": st.column_config.ProgressColumn(L["rsi"], min_value=0, max_value=100),
             },
             hide_index=True,
             use_container_width=True
         )
-        
-        # Dynamic Legend
-        st.markdown("""
-            <div style="display: flex; gap: 20px; font-size: 0.8em; margin-top: 10px;">
-                <span style="color: #00ff88;">● Up / Oversold</span>
-                <span style="color: #ff4b4b;">● Down / Overbought</span>
-                <span style="color: #888;">● Neutral</span>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.warning("No data found for the current watchlist.")
+    
+    st.info(L['radar_hint'])
 
-    st.info("💡 **Pro Tip:** Look for stocks with **Negative Weekly %** but **Oversold RSI** for potential bounce plays.")
-
-elif tab_choice == "Expert Analysis" and selected_symbol:
+elif is_expert and selected_symbol:
     data, news = get_stock_data(selected_symbol)
     if data:
         # Metrics
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Price", f"${data['price']}", f"{data['change']}%")
-        c2.metric("Technical Score", f"{data['tech_score']}/4", "Bullish" if data['tech_score'] > 0 else "Bearish")
-        c3.metric(f"Sector ({data['sector_etf']})", f"{data['sector_change']}%")
-        c4.metric("RSI", data['rsi'])
+        c1.metric(L["price"], f"${data['price']}", f"{data['change']}%")
+        c2.metric(L["tech_score"], f"{data['tech_score']}/4", L["bullish"] if data['tech_score'] > 0 else L["bearish"])
+        c3.metric(f"{L['sector']} ({data['sector_etf']})", f"{data['sector_change']}%")
+        c4.metric(L["rsi"], data['rsi'])
 
         # Multi-panel Chart (Price + Volume)
         from plotly.subplots import make_subplots
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                           vertical_spacing=0.03, subplot_titles=(f'{selected_symbol} Technicals', 'Volume'), 
+                           vertical_spacing=0.03, subplot_titles=(f'{selected_symbol}', 'Volume'), 
                            row_width=[0.3, 0.7])
 
-        # Candlestick
         fig.add_trace(go.Candlestick(x=data['history'].index, open=data['history']['Open'], 
                         high=data['history']['High'], low=data['history']['Low'], 
                         close=data['history']['Close'], name="Price"), row=1, col=1)
         
-        # MA20
         fig.add_trace(go.Scatter(x=data['history'].index, y=data['history']['MA20'], 
                         line=dict(color='#FFD700', width=2), name="MA20"), row=1, col=1)
         
-        # Volume
         colors = ['red' if row['Open'] > row['Close'] else 'green' for _, row in data['history'].iterrows()]
         fig.add_trace(go.Bar(x=data['history'].index, y=data['history']['Volume'], 
                         marker_color=colors, name="Volume"), row=2, col=1)
@@ -335,19 +388,29 @@ elif tab_choice == "Expert Analysis" and selected_symbol:
         fig.update_layout(template="plotly_dark", height=600, xaxis_rangeslider_visible=False, showlegend=False)
         st.plotly_chart(fig, width='stretch')
 
-        # Info row
-        st.info(f"🛡️ **Earnings Surprise History:**\n{data['earnings_hist']}")
+        st.info(f"{L['earnings_title']}\n{data['earnings_hist']}")
 
-        # Prompt
+        # Prompt Generation with Correct Localization
         final_prompt = generate_prompt(data, news, selected_persona, persona_options[selected_persona])
-        st.subheader(f"🤖 {selected_persona} Analysis Prompt")
-        st.text_area("Final Strategy Prompt (Copy to AI)", final_prompt, height=350)
         
-        if st.button("📋 Copy Strategy"):
+        # Rewrite the prompt instructions in the selected language
+        if lang_choice == "繁體中文":
+            final_prompt = final_prompt.replace(f"As {selected_persona}, provide your high-conviction analysis:", L["prompt_instr"].format(name=selected_persona))
+            final_prompt = final_prompt.replace("1. **The \"Earnings Fatigue\" Check\": Based on past surprises ({data['earnings_hist']}), how should we position for the next event?", L["prompt_task1"])
+            final_prompt = final_prompt.replace("2. **Techno-Fundamental Synthesis**: Combine Technical Score ({data['tech_score']}) with Valuation (P/E). Is this a \"trap\" or an \"opportunity\"?", L["prompt_task2"])
+            final_prompt = final_prompt.replace("3. **Smart Money & News**: Are insiders buying the dip or exiting before the catalyst?", L["prompt_task3"])
+
+        st.subheader(f"🤖 {L['prompt_header']}")
+        st.text_area("Copy to AI", final_prompt, height=350)
+        
+        if st.button(L['copy_btn']):
             pyperclip.copy(final_prompt)
-            st.success("Strategy Copied to Clipboard!")
+            st.success(L['success_copy'])
     else:
         st.error("Data Fetch Error.")
+
+st.markdown("---")
+st.caption(L['final_caption'])
 
 st.markdown("---")
 st.caption("Ollie v5.0 - Professional Market Intelligence Deck")
