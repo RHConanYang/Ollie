@@ -4,16 +4,16 @@ from datetime import datetime, timedelta
 
 def get_stock_info(ticker_symbol):
     """
-    獲取股票價格與新聞
+    Fetch stock price data and news.
     """
     try:
-        # 建立 Ticker 物件
+        # Create Ticker object
         ticker = yf.Ticker(ticker_symbol)
         
-        # 1. 獲取股價 (過去一週)
+        # 1. Fetch Price Data (past week)
         hist = ticker.history(period="1wk")
         if hist.empty:
-            return None, "找不到該股票代號的數據。"
+            return None, "Ticker symbol not found."
         
         latest_price = hist['Close'].iloc[-1]
         price_change = ((hist['Close'].iloc[-1] - hist['Close'].iloc[0]) / hist['Close'].iloc[0]) * 100
@@ -26,8 +26,8 @@ def get_stock_info(ticker_symbol):
             "volume": hist['Volume'].iloc[-1]
         }
         
-        # 2. 獲取新聞
-        # 優先嘗試 yfinance 的新聞 (整合 Yahoo Finance)
+        # 2. Fetch News
+        # Primary source: yfinance (Yahoo Finance)
         news = ticker.news[:5]
         news_list = []
         
@@ -35,7 +35,6 @@ def get_stock_info(ticker_symbol):
             for item in news:
                 content = item.get('content', {})
                 title = content.get('title')
-                # 嘗試獲取出版者名稱
                 publisher = "Yahoo Finance"
                 if 'finance' in content and 'owner' in content['finance']:
                     publisher = content['finance']['owner'].get('displayName', "Yahoo Finance")
@@ -46,7 +45,7 @@ def get_stock_info(ticker_symbol):
                         "publisher": publisher
                     })
         
-        # 如果 yfinance 沒抓到新聞，則使用 Google News RSS 作為備案 (優力、免費且全面)
+        # Secondary source: Google News RSS (if yfinance returns nothing)
         if not news_list:
             import requests
             from bs4 import BeautifulSoup
@@ -67,44 +66,44 @@ def get_stock_info(ticker_symbol):
 
 def generate_ai_prompt(ticker_symbol, price_summary, news_list):
     """
-    產生餵給 AI 的 Prompt
+    Generate an analysis prompt for AI.
     """
-    news_text = "\n".join([f"- {n['title']} (來源: {n['publisher']})" for n in news_list])
+    news_text = "\n".join([f"- {n['title']} (Source: {n['publisher']})" for n in news_list])
     
     prompt = f"""
-你是一位資深美股分析師。請根據以下關於 {ticker_symbol} 的最新數據，分析其下週走勢，並給出三個買入理由與三個風險。
+You are a senior US stock market analyst. Based on the following data for {ticker_symbol}, analyze its trend for the upcoming week and provide three reasons to buy and three risks.
 
-### 數據概況:
-- **股票代號**: {ticker_symbol}
-- **最新收盤價**: ${price_summary['latest_price']}
-- **本週漲跌幅**: {price_summary['weekly_change_pct']}%
-- **本週最高/最低**: ${price_summary['high']} / ${price_summary['low']}
-- **成交量**: {price_summary['volume']:,}
+### Data Overview:
+- **Ticker**: {ticker_symbol}
+- **Latest Close Price**: ${price_summary['latest_price']}
+- **Weekly Change**: {price_summary['weekly_change_pct']}%
+- **Weekly High/Low**: ${price_summary['high']} / ${price_summary['low']}
+- **Volume**: {price_summary['volume']:,}
 
-### 最新相關新聞:
+### Latest News:
 {news_text}
 
 ---
-請根據上述數據與新聞，提供專業的分析報告。
+Please provide a professional analysis report based on the data and news above.
 """
     return prompt
 
 if __name__ == "__main__":
-    symbol = input("請輸入股票代號 (例如 AAPL, TSLA): ").upper()
-    print(f"\n正在抓取 {symbol} 的數據中...\n")
+    symbol = input("Enter ticker symbol (e.g., AAPL, TSLA): ").upper()
+    print(f"\nFetching data for {symbol}...\n")
     
     price_data, news_data = get_stock_info(symbol)
     
     if price_data:
         ai_prompt = generate_ai_prompt(symbol, price_data, news_data)
         print("="*30)
-        print("產生的 AI Prompt 如下：")
+        print("Generated AI Prompt:")
         print("="*30)
         print(ai_prompt)
         
-        # 同時存成檔案方便用戶複製
+        # Save to file
         with open(f"{symbol}_ai_prompt.txt", "w", encoding="utf-8") as f:
             f.write(ai_prompt)
-        print(f"\nPrompt 已自動存檔至: {symbol}_ai_prompt.txt")
+        print(f"\nPrompt automatically saved to: {symbol}_ai_prompt.txt")
     else:
-        print(f"錯誤: {news_data}")
+        print(f"Error: {news_data}")

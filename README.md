@@ -1,46 +1,46 @@
 # Ollie - AI Stock Market Analyzer 📈
 
-Ollie 是一個簡單而強大的美股分析工具。它能自動抓取最新的股價數據與即時新聞，並生成一段專業的 AI 分析 Prompt，讓你輕鬆獲取投資見解。
+Ollie is a simple yet powerful tool for US stock market analysis. It automatically fetches the latest price data and real-time news, then generates a structured AI analysis prompt to help you gain investment insights.
 
-## 功能特色
+## Features
 
-- **即時數據**：利用 `yfinance` 獲取最新的收盤價、漲跌幅及交易量。
-- **新聞整合**：結合 Yahoo Finance 與 Google News，抓取最相關的市場動態。
-- **AI 友善**：自動生成結構化的 Prompt，可直接餵給 ChatGPT、Claude 或 Gemini 進行深度分析。
-- **輕量化**：無需複雜設定，一鍵執行。
+- **Real-time Data**: Get the latest close price, weekly change, and volume using `yfinance`.
+- **News Integration**: Combines Yahoo Finance and Google News to fetch the most relevant market updates.
+- **AI-Friendly**: Generates a structured prompt that can be directly pasted into ChatGPT, Claude, or Gemini for deep analysis.
+- **Lightweight**: No complex configuration required, just run and analyze.
 
-## 安裝教學
+## Installation
 
-1. **複製儲存庫**
+1. **Clone the repository**
    ```bash
    git clone git@github.com:RHConanYang/Ollie.git
    cd Ollie
    ```
 
-2. **安裝必要套件**
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-## 使用方法
+## Usage
 
-執行主程式並輸入股票代號（例如 AAPL）：
+Run the main script and enter a ticker symbol (e.g., AAPL):
 
 ```bash
 python stock_analyzer.py
 ```
 
-執行後，程式會：
-1. 在終端機顯示分析數據。
-2. 同時產生一個 `[股票代號]_ai_prompt.txt` 檔案，內容可直接貼給 AI 進行分析。
+After execution, the program will:
+1. Display the analysis data in the terminal.
+2. Generate a `[TICKER]_ai_prompt.txt` file, which you can paste directly into an AI for analysis.
 
-## 技術棧
+## Tech Stack
 
 - Python 3.12
-- yfinance (數據來源)
-- BeautifulSoup4 (新聞解析)
-- Pandas (數據處理)
+- yfinance (Data Source)
+- BeautifulSoup4 (News Parsing)
+- Pandas (Data Processing)
 
-## 免責聲明
+## Disclaimer
 
-本工具僅供參考，不構成任何投資建議。投資有風險，入市需謹慎。
+This tool is for informational purposes only and does not constitute investment advice. Investing involves risk.
