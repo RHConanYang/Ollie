@@ -1,6 +1,8 @@
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta
+import sys
+import pyperclip
+from datetime import datetime
 
 def get_stock_info(ticker_symbol):
     """
@@ -160,33 +162,67 @@ Based on your expertise as a {selected_persona['name']}, please provide a profes
 """
     return prompt
 
-if __name__ == "__main__":
-    print("-" * 30)
-    print("      OLLIE - PROMPT FACTORY   ")
-    print("-" * 30)
-    
-    symbol = input("Enter ticker symbol (e.g., NVDA, TSLA): ").upper()
-    
-    print("\nSelect Analyst Persona:")
-    print("1. Standard (Balanced)")
-    print("2. Value Specialist (Fundamentals focus)")
-    print("3. Technical Specialist (Price action focus)")
-    persona_choice = input("Enter choice (1-3): ") or "1"
-    
+def execute_analysis(symbol, persona_choice):
     print(f"\nProcessing high-depth data for {symbol}...\n")
-    
     result, news_data = get_stock_info(symbol)
     
     if result:
         ai_prompt = generate_ai_prompt(symbol, result, news_data, persona_choice)
-        print("="*30)
-        print("GENERATE PROFESSIONAL AI PROMPT:")
-        print("="*30)
-        print(ai_prompt)
         
         # Save to file
-        with open(f"{symbol}_expert_prompt.txt", "w", encoding="utf-8") as f:
+        filename = f"{symbol}_expert_prompt.txt"
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(ai_prompt)
-        print(f"\nExpert prompt saved to: {symbol}_expert_prompt.txt")
+        
+        # AUTO-COPY TO CLIPBOARD
+        try:
+            pyperclip.copy(ai_prompt)
+            copy_msg = " [✓ COPIED TO CLIPBOARD]"
+        except:
+            copy_msg = ""
+
+        print("-" * 40)
+        print(f"DONE: {symbol}{copy_msg}")
+        print(f"Saved to: {filename}")
+        print("-" * 40)
     else:
-        print(f"Error: {news_data}")
+        print(f"Error fetching {symbol}: {news_data}")
+
+if __name__ == "__main__":
+    print("-" * 40)
+    print("      OLLIE - PROMPT FACTORY v2.0   ")
+    print("-" * 40)
+
+    # 1. Selection logic
+    watchlist_file = "watchlist.txt"
+    tickers = []
+    
+    if len(sys.argv) > 1:
+        tickers = sys.argv[1:]
+    else:
+        choice = input("Enter ticker or press Enter to use 'watchlist.txt': ").strip().upper()
+        if choice:
+            tickers = [choice]
+        else:
+            try:
+                with open(watchlist_file, "r") as f:
+                    tickers = [line.strip().upper() for line in f if line.strip()]
+            except FileNotFoundError:
+                print("watchlist.txt not found. Please enter a ticker symbol.")
+                sys.exit(1)
+
+    if not tickers:
+        print("No tickers to process.")
+        sys.exit(0)
+
+    print("\nSelect Analyst Persona:")
+    print("1. Standard (Balanced)")
+    print("2. Value Specialist")
+    print("3. Technical Specialist")
+    persona_choice = input("Choice (1-3) [Default 1]: ") or "1"
+
+    # 2. Process all symbols
+    for sym in tickers:
+        execute_analysis(sym, persona_choice)
+    
+    print("\nAll tasks completed! You can now paste the last prompt directly into ChatGPT/Claude.")

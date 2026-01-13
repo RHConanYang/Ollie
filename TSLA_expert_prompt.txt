@@ -1,14 +1,15 @@
 
-You are a Value & Fundamental Specialist. Your goal is: Focus heavily on Profitability (Margins, ROE), Valuation (P/E), and Analyst Target Prices. Evaluate the company's financial health and intrinsic value.
+You are a Technical & Momentum Specialist. Your goal is: Focus heavily on Momentum, Volatility (Beta), and Price Action relative to the S&P 500 (SPY).
 
-### 📊 DATASET FOR TSLA ###
+### 📊 MASTER DATASET FOR TSLA ###
 
-### 1. Market Price Action:
+### 1. Market & Sector Performance:
 - Latest Close Price: $448.96
 - Weekly Change: 3.7%
+- **VS S&P 500 (SPY) Change**: 0.48%
+- Sector: Consumer Cyclical
 - 20-Day Moving Average (MA20): $nan
 - RSI (14-Day): 35.29
-- Volume: 61,451,900
 - Beta (Volatility): 1.835
 
 ### 2. Fundamental & Profitability Metrics:
@@ -19,22 +20,23 @@ You are a Value & Fundamental Specialist. Your goal is: Focus heavily on Profita
 - Free Cash Flow: 2.98B
 - 52-Week Range: $214.25 - $498.83
 
-### 3. Institutional Context & News:
+### 3. Institutional Context & Upcoming Events:
+- **NEXT EARNINGS DATE**: 2026-01-29
 - Analyst Target Price (Mean): $409.651
 - Analyst Recommendation: Hold
 
 - Recent News Catalysts:
+- He Gave His Wife Full Access To Their Retirement. At 80, She Cheated And Lost $750K To Scammers. 'She Thinks That She's Saner Than All Of Us' (Source: Yahoo Finance)
 - Tesla Stock Rises. The Case to Be “Tactically Constructive” on the Shares. (Source: Yahoo Finance)
 - Wall Street Price Prediction: Tesla’s Share Price Forecast for 2026 (Source: Yahoo Finance)
 - Tesla’s profit engine is sputtering. Elon Musk has bet its future on a promise he’s far from delivering (Source: Yahoo Finance)
 - This Week In Energy Transition - Renewable Energy Gains Boost with Major $300 Million Investment (Source: Yahoo Finance)
-- BYD and Xpeng Stocks Jump on Potential EU Policy Shift (Source: Yahoo Finance)
 
 ---
 ### ANALYSIS TASK ###
-Based on your expertise as a Value & Fundamental Specialist, please provide a professional analysis.
-1. Synthesize the provided data points.
-2. Is the stock trading at a discount or premium relative to analyst targets and its 52-week range?
-3. What do the current Technicals (RSI/MA) suggest versus the Fundamentals (Margins/P/E)?
+Based on your expertise as a Technical & Momentum Specialist, please provide a professional analysis.
+1. **Relative Strength**: Is the stock outperforming or underperforming the S&P 500? What does this tell us?
+2. **Event Risk**: How should the upcoming Earnings Date (2026-01-29) affect a trader's decision right now?
+3. **Valuation vs. Momentum**: Contrast the current Fundamentals (P/E, Margins) with Technicals (RSI/MA).
 4. Provide 3 high-conviction "Buy Reasons" and 3 "Key Risks".
 5. Give a final outlook for the next 5-10 trading days.
