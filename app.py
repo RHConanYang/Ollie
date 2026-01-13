@@ -40,29 +40,52 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- SESSION STATE FOR HISTORY ---
-if 'prompt_history' not in st.session_state:
-    st.session_state.prompt_history = []
+# --- UTILS ---
+SECTOR_ETF_MAP = {
+    "Technology": "XLK",
+    "Consumer Cyclical": "XLY",
+    "Financial Services": "XLF",
+    "Healthcare": "XLV",
+    "Communication Services": "XLC",
+    "Industrials": "XLI",
+    "Consumer Defensive": "XLP",
+    "Energy": "XLE",
+    "Real Estate": "XLRE",
+    "Utilities": "XLU",
+    "Basic Materials": "XLB"
+}
+
+def get_sector_performance(sector_name):
+    etf_symbol = SECTOR_ETF_MAP.get(sector_name)
+    if not etf_symbol:
+        return 0.0, "N/A"
+    try:
+        etf = yf.Ticker(etf_symbol).history(period="1wk")
+        change = ((etf['Close'].iloc[-1] - etf['Close'].iloc[0]) / etf['Close'].iloc[0]) * 100
+        return round(change, 2), etf_symbol
+    except:
+        return 0.0, etf_symbol
 
 # --- CORE LOGIC ---
 def get_stock_data(symbol):
     try:
         ticker = yf.Ticker(symbol)
-        # Fetch 3 months to ensure MA20 has enough leading data
         hist = ticker.history(period="3mo")
         if hist.empty:
             return None, "Not found"
         
-        # Calculate Technical Indicators
-        # Moving Average 20
+        # Indicators
         hist['MA20'] = hist['Close'].rolling(window=20).mean()
         
-        # We only want to focus on recent data for the technical indicators calculation
-        # but we need the leading 20 days to see the line. 
-        # Let's keep the last 40 trading days for the display
+        # MACD Calculation
+        exp1 = hist['Close'].ewm(span=12, adjust=False).mean()
+        exp2 = hist['Close'].ewm(span=26, adjust=False).mean()
+        hist['MACD'] = exp1 - exp2
+        hist['Signal'] = hist['MACD'].ewm(span=9, adjust=False).mean()
+        
         display_hist = hist.tail(40)
         
-        # Macro context (VIX and 10Y Yield)
+        # Macro context
         vix = yf.Ticker("^VIX").history(period="1d")['Close'].iloc[-1]
         tnx = yf.Ticker("^TNX").history(period="1d")['Close'].iloc[-1]
         
@@ -74,179 +97,257 @@ def get_stock_data(symbol):
         rsi = 100 - (100 / (1 + rs))
         
         info = ticker.info
-        calendar = ticker.calendar
+        sector = info.get('sector', 'N/A')
+        sector_change, sector_etf = get_sector_performance(sector)
         
-        # Smart Money: Insider Transactions
-        insider = ticker.insider_transactions
-        insider_summary = "No recent data"
-        if insider is not None and not insider.empty:
-            summary_list = []
-            for _, row in insider.head(5).iterrows():
-                summary_list.append(f"{row['Text']} ({row['Shares']} shares)")
-            insider_summary = "\n".join(summary_list)
+        # Earnings History
+        earnings_hist = ticker.earnings_dates
+        earning_summary = "N/A"
+        if earnings_hist is not None and not earnings_hist.empty:
+            valid_surprises = earnings_hist.dropna(subset=['Surprise(%)']).head(3)
+            if not valid_surprises.empty:
+                earning_summary = "\n".join([f"- Date: {idx.date()}, Surprise: {row['Surprise(%)']:.2f}%" for idx, row in valid_surprises.iterrows()])
 
+        # Technical Score
+        score = 0
+        latest_rsi = rsi.iloc[-1]
+        if latest_rsi < 30: score += 2 # Oversold
+        if latest_rsi > 70: score -= 2 # Overbought
+        if display_hist['Close'].iloc[-1] > display_hist['MA20'].iloc[-1]: score += 1 # Above MA20
+        if display_hist['MACD'].iloc[-1] > display_hist['Signal'].iloc[-1]: score += 1 # MACD Bullish
+        
         data = {
             "symbol": symbol,
+            "name": info.get('longName', symbol),
             "price": round(display_hist['Close'].iloc[-1], 2),
             "change": round(((display_hist['Close'].iloc[-1] - display_hist['Close'].iloc[-5]) / display_hist['Close'].iloc[-5]) * 100, 2),
-            "rsi": round(rsi.iloc[-1], 2) if not pd.isna(rsi.iloc[-1]) else "N/A",
-            "ma20_curr": round(display_hist['MA20'].iloc[-1], 2) if not pd.isna(display_hist['MA20'].iloc[-1]) else "N/A",
-            "sector": info.get('sector', 'N/A'),
+            "rsi": round(latest_rsi, 2) if not pd.isna(latest_rsi) else 50.0,
+            "ma20_curr": round(display_hist['MA20'].iloc[-1], 2) if not pd.isna(display_hist['MA20'].iloc[-1]) else 0.0,
+            "macd": round(display_hist['MACD'].iloc[-1], 3),
+            "sector": sector,
+            "sector_change": sector_change,
+            "sector_etf": sector_etf,
             "pe": info.get('forwardPE', 'N/A'),
             "target": info.get('targetMeanPrice', 'N/A'),
             "recommendation": info.get('recommendationKey', 'N/A').replace('_', ' ').capitalize(),
             "short_ratio": info.get('shortRatio', 'N/A'),
-            "insider": insider_summary,
+            "insider": "\n".join([f"{r['Text']} ({r['Shares']} shares)" for _, r in ticker.insider_transactions.head(3).iterrows()]) if ticker.insider_transactions is not None else "No data",
+            "earnings_hist": earning_summary,
             "history": display_hist,
-            "next_earnings": calendar.get('Earnings Date', 'N/A') if isinstance(calendar, dict) else "N/A",
+            "next_earnings": ticker.calendar.get('Earnings Date', 'N/A') if isinstance(ticker.calendar, dict) else "N/A",
             "vix": round(vix, 2),
-            "tnx": round(tnx, 2)
+            "tnx": round(tnx, 2),
+            "tech_score": score
         }
-        
-        # News
-        news = ticker.news[:5]
-        formatted_news = []
-        for n in news:
-            content = n.get('content', {})
-            formatted_news.append({
-                "title": content.get('title', 'N/A'),
-                "publisher": content.get('finance', {}).get('owner', {}).get('displayName', 'Yahoo Finance')
-            })
-            
-        return data, formatted_news
+        return data, ticker.news[:5]
     except Exception as e:
         return None, str(e)
 
-def generate_prompt(data, news, persona_name, persona_instruction):
-    news_text = "\n".join([f"- {n['title']} (Source: {n['publisher']})" for n in news])
-    spy = yf.Ticker("SPY").history(period="1wk")
-    spy_change = round(((spy['Close'].iloc[-1] - spy['Close'].iloc[0]) / spy['Close'].iloc[0]) * 100, 2)
+def generate_prompt(data, news_list, persona_name, persona_instruction):
+    news_text = ""
+    for n in news_list:
+        content = n.get('content', {})
+        news_text += f"- {content.get('title')} (Publisher: {content.get('finance', {}).get('owner', {}).get('displayName', 'Unknown')})\n"
+    
+    spy_hist = yf.Ticker("SPY").history(period="1wk")
+    spy_change = round(((spy_hist['Close'].iloc[-1] / spy_hist['Close'].iloc[0]) - 1) * 100, 2)
 
     prompt = f"""
 You are {persona_name}. Your objective is: {persona_instruction}
 
-### 🌐 GLOBAL & MACRO CONTEXT ###
-- VIX Index: {data['vix']} (Volatility check)
-- 10Y Yield: {data['tnx']}% (Interest rate pressure)
-- SPY Weekly: {spy_change}% (Market Benchmark)
+### 🌐 GLOBAL MACRO & SENTIMENT ###
+- VIX Index: {data['vix']} | 10Y Yield: {data['tnx']}% | SPY Weekly: {spy_change}%
+- **Technical Signal Score**: {data['tech_score']}/4 (Higher is more bullish)
 
-### 📊 DATASET FOR {data['symbol']} ###
+### 📊 DATASET FOR {data['symbol']} ({data['name']}) ###
 
-### 1. Smart Money & Sentiment:
-- **Insider Activity (Recent)**: 
-{data['insider']}
-- **Short Ratio**: {data['short_ratio']} (Note: Above 5-10 indicates high bearish interest or squeeze potential)
-
-### 2. Market & Sector Performance:
-- Latest Close Price: ${data['price']}
-- Weekly Change: {data['change']}%
-- Sector: {data['sector']}
-- 20-Day Moving Average (MA20): ${data['ma20_curr']}
-- RSI (14-Day): {data['rsi']}
-
-### 3. Fundamental & Institutional Metrics:
-- Forward P/E Ratio: {data['pe']}
-- Analyst Target Price (Mean): ${data['target']}
-- Analyst Recommendation: {data['recommendation']}
+### 1. Macro & Earnings Context:
+- Sector Performance ({data['sector_etf']}): {data['sector_change']}%
+- **PAST EARNINGS SURPRISES**: 
+{data['earnings_hist']}
 - **NEXT EARNINGS DATE**: {data['next_earnings']}
 
-### 4. Recent News Catalysts:
+### 2. Smart Money Indicators:
+- **Insider Activity**: 
+{data['insider']}
+- **Short Ratio**: {data['short_ratio']}
+
+### 3. Technicals & Momentum:
+- Price: ${data['price']} | MA20: ${data['ma20_curr']}
+- RSI (14-Day): {data['rsi']} | MACD Line: {data['macd']}
+
+### 4. Valuation & News:
+- Forward P/E: {data['pe']} | Analyst Recommendation: {data['recommendation']}
+- Recent News Highlights:
 {news_text}
 
 ---
 ### ANALYSIS TASK ###
-Based on your unique expertise as {persona_name}, please provide:
-1. **Smart Money Check**: What does the Insider Activity and Short Ratio tell you about the current sentiment?
-2. **Technical vs Fundamental**: Contrast the chart momentum (MA20/RSI) with its valuation and analyst targets.
-3. **Macro/Event Synthesis**: Factor in VIX, 10Y Yield, and the upcoming Earnings Date.
+As {persona_name}, provide your high-conviction analysis:
+1. **The "Earnings Fatigue" Check**: Based on past surprises ({data['earnings_hist']}), how should we position for the next event?
+2. **Techno-Fundamental Synthesis**: Combine Technical Score ({data['tech_score']}) with Valuation (P/E). Is this a "trap" or an "opportunity"?
+3. **Smart Money & News**: Are insiders buying the dip or exiting before the catalyst?
 4. Provide 3 specific Buy Reasons and 3 specific Risks.
-5. Final Short-Term Outlook (5-10 days).
+5. High-conviction outlook for 5-10 trading days.
 """
     return prompt
 
 # --- SIDEBAR ---
-# (Keep sidebar mostly same but add history button)
-st.sidebar.title("🔍 Ollie Watchlist")
-new_ticker = st.sidebar.text_input("Add Ticker", "").upper()
-if st.sidebar.button("Add to List"):
-    if new_ticker:
-        with open("watchlist.txt", "a") as f:
-            f.write(f"\n{new_ticker}")
-        st.rerun()
+st.sidebar.title("🔍 Ollie Control")
+tab_choice = st.sidebar.radio("Navigate", ["Market Radar", "Expert Analysis"])
 
 try:
     with open("watchlist.txt", "r") as f:
-        watchlist = list(set([line.strip().upper() for line in f if line.strip()]))
+        watchlist = [line.strip().upper() for line in f if line.strip()]
 except:
-    watchlist = ["AAPL", "TSLA", "NVDA"]
+    watchlist = ["AAPL", "TSLA", "NVDA", "GOOGL", "MSFT"]
 
 st.sidebar.markdown("---")
-selected_symbol = st.sidebar.selectbox("Choose a stock", watchlist)
-
-persona_options = {
-    "Warren Buffett": "Value/Moat focus",
-    "Cathie Wood": "Innovation/Growth focus",
-    "Michael Burry": "Contrarian/Bubble skepticism",
-    "Ray Dalio": "Macro/Cycle focus",
-    "Peter Lynch": "GARP/Stock-picking focus",
-    "Jim Cramer": "Momentum/Sentiment focus"
-}
-selected_persona = st.sidebar.radio("Persona", list(persona_options.keys()))
-
-if st.sidebar.button("🗑️ Clear History"):
-    st.session_state.prompt_history = []
-    st.rerun()
+if tab_choice == "Expert Analysis":
+    selected_symbol = st.sidebar.selectbox("Select Ticker", watchlist)
+    persona_options = {
+        "Warren Buffett": "Value/Moat focus",
+        "Cathie Wood": "Innovation/Growth focus",
+        "Michael Burry": "Contrarian skepticism",
+        "Ray Dalio": "Macro/Cycle focus",
+        "Peter Lynch": "GARP/Stock-picking focus",
+        "Jim Cramer": "Momentum/Sentiment focus"
+    }
+    selected_persona = st.sidebar.radio("Persona", list(persona_options.keys()))
+else:
+    selected_symbol = None
 
 # --- MAIN ---
-st.title("📈 Ollie - Expert Prompt Factory v4.0")
+st.title(f"📈 Ollie - {tab_choice}")
 
-if selected_symbol:
+if tab_choice == "Market Radar":
+    st.subheader("📡 Live Market Radar")
+    
+    # --- Watchlist Management ---
+    with st.expander("⚙️ Manage Watchlist Tickers"):
+        current_tickers = ", ".join(watchlist)
+        edited_tickers = st.text_area("Edit tickers (comma separated):", current_tickers, height=100)
+        if st.button("💾 Save Watchlist"):
+            new_list = [t.strip().upper() for t in edited_tickers.split(",") if t.strip()]
+            with open("watchlist.txt", "w") as f:
+                f.write("\n".join(new_list))
+            st.success("Watchlist updated!")
+            st.rerun()
+
+    st.markdown("---")
+    radar_data = []
+    with st.spinner("Scanning the market..."):
+        for sym in watchlist:
+            try:
+                ticker = yf.Ticker(sym)
+                hist = ticker.history(period="1mo")
+                if not hist.empty:
+                    # Calculate RSI
+                    delta = hist['Close'].diff()
+                    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                    rsi_val = 100 - (100 / (1 + (gain/loss)))
+                    
+                    price_now = hist['Close'].iloc[-1]
+                    price_last_week = hist['Close'].iloc[-5]
+                    change_pct = ((price_now - price_last_week) / price_last_week) * 100
+                    
+                    radar_data.append({
+                        "Ticker": sym,
+                        "Price": round(price_now, 2),
+                        "Weekly %": round(change_pct, 2),
+                        "RSI (14)": round(rsi_val.iloc[-1], 2),
+                        "Status": "Overbought" if rsi_val.iloc[-1] > 70 else ("Oversold" if rsi_val.iloc[-1] < 30 else "Neutral")
+                    })
+            except:
+                continue
+    
+    if radar_data:
+        df = pd.DataFrame(radar_data)
+        
+        # --- PREMIUM DATAFRAME CONFIG ---
+        st.dataframe(
+            df,
+            column_config={
+                "Ticker": st.column_config.TextColumn("Symbol", help="Stock Ticker"),
+                "Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
+                "Weekly %": st.column_config.NumberColumn(
+                    "Weekly Perf",
+                    format="%.2f%%",
+                    help="Performance over the last 5 trading days"
+                ),
+                "RSI (14)": st.column_config.ProgressColumn(
+                    "Relative Strength (RSI)",
+                    help="RSI > 70 is Overbought, < 30 is Oversold",
+                    format="%.0f",
+                    min_value=0,
+                    max_value=100,
+                ),
+                "Status": st.column_config.TextColumn("Condition")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # Dynamic Legend
+        st.markdown("""
+            <div style="display: flex; gap: 20px; font-size: 0.8em; margin-top: 10px;">
+                <span style="color: #00ff88;">● Up / Oversold</span>
+                <span style="color: #ff4b4b;">● Down / Overbought</span>
+                <span style="color: #888;">● Neutral</span>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.warning("No data found for the current watchlist.")
+
+    st.info("💡 **Pro Tip:** Look for stocks with **Negative Weekly %** but **Oversold RSI** for potential bounce plays.")
+
+elif tab_choice == "Expert Analysis" and selected_symbol:
     data, news = get_stock_data(selected_symbol)
     if data:
-        # Metrics Display
+        # Metrics
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Price", f"${data['price']}", f"{data['change']}%")
-        c2.metric("RSI", data['rsi'])
-        c3.metric("Short Ratio", data['short_ratio'])
-        c4.metric("MA20", f"${data['ma20_curr']}")
+        c2.metric("Technical Score", f"{data['tech_score']}/4", "Bullish" if data['tech_score'] > 0 else "Bearish")
+        c3.metric(f"Sector ({data['sector_etf']})", f"{data['sector_change']}%")
+        c4.metric("RSI", data['rsi'])
 
-        # ADVANCED CHART
-        fig = go.Figure()
-        # Candlesticks
-        fig.add_trace(go.Candlestick(x=data['history'].index,
-                        open=data['history']['Open'], high=data['history']['High'],
-                        low=data['history']['Low'], close=data['history']['Close'], 
-                        name="Price"))
-        # MA20 Line - Make it YELLOW and THICKER
-        fig.add_trace(go.Scatter(x=data['history'].index, y=data['history']['MA20'], 
-                        line=dict(color='#FFD700', width=3), name="MA20 (20-Day SMA)"))
+        # Multi-panel Chart (Price + Volume)
+        from plotly.subplots import make_subplots
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
+                           vertical_spacing=0.03, subplot_titles=(f'{selected_symbol} Technicals', 'Volume'), 
+                           row_width=[0.3, 0.7])
+
+        # Candlestick
+        fig.add_trace(go.Candlestick(x=data['history'].index, open=data['history']['Open'], 
+                        high=data['history']['High'], low=data['history']['Low'], 
+                        close=data['history']['Close'], name="Price"), row=1, col=1)
         
-        fig.update_layout(template="plotly_dark", height=450, xaxis_rangeslider_visible=False,
-                          margin=dict(l=20, r=20, t=30, b=20))
+        # MA20
+        fig.add_trace(go.Scatter(x=data['history'].index, y=data['history']['MA20'], 
+                        line=dict(color='#FFD700', width=2), name="MA20"), row=1, col=1)
+        
+        # Volume
+        colors = ['red' if row['Open'] > row['Close'] else 'green' for _, row in data['history'].iterrows()]
+        fig.add_trace(go.Bar(x=data['history'].index, y=data['history']['Volume'], 
+                        marker_color=colors, name="Volume"), row=2, col=1)
+
+        fig.update_layout(template="plotly_dark", height=600, xaxis_rangeslider_visible=False, showlegend=False)
         st.plotly_chart(fig, width='stretch')
 
-        # PROMPT AREA
-        final_prompt = generate_prompt(data, news, selected_persona, persona_options[selected_persona])
-        
-        st.subheader(f"🤖 {selected_persona}'s Expert Prompt")
-        st.text_area("Copy this to your AI:", final_prompt, height=300)
-        
-        if st.button("📋 Copy & Save to History"):
-            pyperclip.copy(final_prompt)
-            # Save to history
-            entry = {"time": datetime.now().strftime("%H:%M:%S"), "symbol": selected_symbol, "prompt": final_prompt}
-            st.session_state.prompt_history.insert(0, entry)
-            st.success("Copied and recorded!")
+        # Info row
+        st.info(f"🛡️ **Earnings Surprise History:**\n{data['earnings_hist']}")
 
-        # HISTORY SECTION
-        if st.session_state.prompt_history:
-            st.markdown("---")
-            st.subheader("📜 Prompt History")
-            for i, item in enumerate(st.session_state.prompt_history[:5]): # Show last 5
-                with st.expander(f"{item['time']} - {item['symbol']} Analysis"):
-                    st.text(item['prompt'])
+        # Prompt
+        final_prompt = generate_prompt(data, news, selected_persona, persona_options[selected_persona])
+        st.subheader(f"🤖 {selected_persona} Analysis Prompt")
+        st.text_area("Final Strategy Prompt (Copy to AI)", final_prompt, height=350)
+        
+        if st.button("📋 Copy Strategy"):
+            pyperclip.copy(final_prompt)
+            st.success("Strategy Copied to Clipboard!")
     else:
-        st.error(f"Could not fetch data for {selected_symbol}. Please check the ticker. Error: {news}")
+        st.error("Data Fetch Error.")
 
 st.markdown("---")
-st.caption("Ollie v4.0 - Designed to make your AI analysis smarter.")
+st.caption("Ollie v5.0 - Professional Market Intelligence Deck")
