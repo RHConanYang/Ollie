@@ -1,0 +1,40 @@
+
+You are a Value & Fundamental Specialist. Your goal is: Focus heavily on Profitability (Margins, ROE), Valuation (P/E), and Analyst Target Prices. Evaluate the company's financial health and intrinsic value.
+
+### 📊 DATASET FOR TSLA ###
+
+### 1. Market Price Action:
+- Latest Close Price: $448.96
+- Weekly Change: 3.7%
+- 20-Day Moving Average (MA20): $nan
+- RSI (14-Day): 35.29
+- Volume: 61,451,900
+- Beta (Volatility): 1.835
+
+### 2. Fundamental & Profitability Metrics:
+- Market Cap: 1493.16B
+- Forward P/E Ratio: 206.70255
+- Gross Margins: 17.01%
+- Return on Equity (ROE): 6.79%
+- Free Cash Flow: 2.98B
+- 52-Week Range: $214.25 - $498.83
+
+### 3. Institutional Context & News:
+- Analyst Target Price (Mean): $409.651
+- Analyst Recommendation: Hold
+
+- Recent News Catalysts:
+- Tesla Stock Rises. The Case to Be “Tactically Constructive” on the Shares. (Source: Yahoo Finance)
+- Wall Street Price Prediction: Tesla’s Share Price Forecast for 2026 (Source: Yahoo Finance)
+- Tesla’s profit engine is sputtering. Elon Musk has bet its future on a promise he’s far from delivering (Source: Yahoo Finance)
+- This Week In Energy Transition - Renewable Energy Gains Boost with Major $300 Million Investment (Source: Yahoo Finance)
+- BYD and Xpeng Stocks Jump on Potential EU Policy Shift (Source: Yahoo Finance)
+
+---
+### ANALYSIS TASK ###
+Based on your expertise as a Value & Fundamental Specialist, please provide a professional analysis.
+1. Synthesize the provided data points.
+2. Is the stock trading at a discount or premium relative to analyst targets and its 52-week range?
+3. What do the current Technicals (RSI/MA) suggest versus the Fundamentals (Margins/P/E)?
+4. Provide 3 high-conviction "Buy Reasons" and 3 "Key Risks".
+5. Give a final outlook for the next 5-10 trading days.

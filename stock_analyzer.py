@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 
 def get_stock_info(ticker_symbol):
     """
-    Fetch comprehensive stock data including technicals, fundamentals, analyst targets, and news.
+    Fetch comprehensive stock data including technicals, fundamentals, earnings, and sector context.
     """
     try:
         ticker = yf.Ticker(ticker_symbol)
         
-        # 1. Fetch Price Data (past month to calculate indicators)
+        # 1. Fetch Price Data
         hist = ticker.history(period="1mo")
         if hist.empty:
             return None, "Ticker symbol not found."
@@ -22,18 +22,27 @@ def get_stock_info(ticker_symbol):
         rsi = 100 - (100 / (1 + rs))
         
         latest_price = hist['Close'].iloc[-1]
-        price_change = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-5]) / hist['Close'].iloc[-5]) * 100 # Weekly
+        price_change = ((hist['Close'].iloc[-1] - hist['Close'].iloc[-5]) / hist['Close'].iloc[-5]) * 100
         
-        # 2. Fetch Deep Fundamentals & Analyst Data
+        # 2. Fetch Deep Fundamentals & Info
         info = ticker.info
+        sector = info.get('sector', 'N/A')
         
-        # Profitability & Growth
+        # Earnings Data
+        calendar = ticker.calendar
+        next_earnings = "N/A"
+        if calendar and 'Earnings Date' in calendar:
+            dates = calendar['Earnings Date']
+            next_earnings = ", ".join([d.strftime('%Y-%m-%d') for d in dates]) if isinstance(dates, list) else dates.strftime('%Y-%m-%d')
+
         analysis_data = {
             "target_price": info.get('targetMeanPrice', 'N/A'),
             "recommendation": info.get('recommendationKey', 'N/A').replace('_', ' ').capitalize(),
             "gross_margins": f"{info.get('grossMargins', 0) * 100:.2f}%" if info.get('grossMargins') else 'N/A',
             "roe": f"{info.get('returnOnEquity', 0) * 100:.2f}%" if info.get('returnOnEquity') else 'N/A',
             "free_cashflow": f"{info.get('freeCashflow', 0) / 1e9:.2f}B" if info.get('freeCashflow') else 'N/A',
+            "next_earnings": next_earnings,
+            "sector": sector
         }
         
         fundamentals = {
@@ -44,15 +53,20 @@ def get_stock_info(ticker_symbol):
             "fifty_two_week_low": info.get('fiftyTwoWeekLow', 'N/A')
         }
         
+        # 3. Sector Context (Compare stock with S&P 500)
+        spy = yf.Ticker("SPY").history(period="1wk")
+        spy_change = ((spy['Close'].iloc[-1] - spy['Close'].iloc[0]) / spy['Close'].iloc[0]) * 100
+        
         price_summary = {
             "latest_price": round(latest_price, 2),
             "weekly_change_pct": round(price_change, 2),
+            "spy_weekly_change": round(spy_change, 2),
             "rsi": round(rsi.iloc[-1], 2) if not pd.isna(rsi.iloc[-1]) else 'N/A',
             "ma_20": round(hist['Close'].rolling(window=20).mean().iloc[-1], 2),
             "volume": hist['Volume'].iloc[-1]
         }
         
-        # 3. Fetch News
+        # 4. Fetch News
         news = ticker.news[:5]
         news_list = []
         if news:
@@ -82,7 +96,7 @@ def get_stock_info(ticker_symbol):
 
 def generate_ai_prompt(ticker_symbol, data, news_list, persona):
     """
-    Generate an expert-grade analysis prompt for AI based on selected persona.
+    Generate an ultra-depth analysis prompt for AI based on selected persona.
     """
     price_summary, fundamentals, analysis_data = data
     news_text = "\n".join([f"- {n['title']} (Source: {n['publisher']})" for n in news_list])
@@ -91,15 +105,15 @@ def generate_ai_prompt(ticker_symbol, data, news_list, persona):
     personas = {
         "1": {
             "name": "Standard/Balanced Analyst",
-            "instruction": "Provide a balanced view covering both technical and fundamental aspects."
+            "instruction": "Provide a balanced view covering both technical, fundamental, and upcoming event risks."
         },
         "2": {
             "name": "Value & Fundamental Specialist",
-            "instruction": "Focus heavily on Profitability (Margins, ROE), Valuation (P/E), and Analyst Target Prices. Evaluate the company's financial health and intrinsic value."
+            "instruction": "Focus heavily on Financial Health, P/E, Cashflow, and how the stock compares to the broader market valuation."
         },
         "3": {
             "name": "Technical & Momentum Specialist",
-            "instruction": "Focus heavily on Price Action, RSI, Moving Averages, and Volatility (Beta). Identify key support/resistance areas and momentum shifts."
+            "instruction": "Focus heavily on Momentum, Volatility (Beta), and Price Action relative to the S&P 500 (SPY)."
         }
     }
     
@@ -108,14 +122,15 @@ def generate_ai_prompt(ticker_symbol, data, news_list, persona):
     prompt = f"""
 You are a {selected_persona['name']}. Your goal is: {selected_persona['instruction']}
 
-### 📊 DATASET FOR {ticker_symbol} ###
+### 📊 MASTER DATASET FOR {ticker_symbol} ###
 
-### 1. Market Price Action:
+### 1. Market & Sector Performance:
 - Latest Close Price: ${price_summary['latest_price']}
 - Weekly Change: {price_summary['weekly_change_pct']}%
+- **VS S&P 500 (SPY) Change**: {price_summary['spy_weekly_change']}%
+- Sector: {analysis_data['sector']}
 - 20-Day Moving Average (MA20): ${price_summary['ma_20']}
 - RSI (14-Day): {price_summary['rsi']}
-- Volume: {price_summary['volume']:,}
 - Beta (Volatility): {fundamentals['beta']}
 
 ### 2. Fundamental & Profitability Metrics:
@@ -126,7 +141,8 @@ You are a {selected_persona['name']}. Your goal is: {selected_persona['instructi
 - Free Cash Flow: {analysis_data['free_cashflow']}
 - 52-Week Range: ${fundamentals['fifty_two_week_low']} - ${fundamentals['fifty_two_week_high']}
 
-### 3. Institutional Context & News:
+### 3. Institutional Context & Upcoming Events:
+- **NEXT EARNINGS DATE**: {analysis_data['next_earnings']}
 - Analyst Target Price (Mean): ${analysis_data['target_price']}
 - Analyst Recommendation: {analysis_data['recommendation']}
 
@@ -136,9 +152,9 @@ You are a {selected_persona['name']}. Your goal is: {selected_persona['instructi
 ---
 ### ANALYSIS TASK ###
 Based on your expertise as a {selected_persona['name']}, please provide a professional analysis.
-1. Synthesize the provided data points.
-2. Is the stock trading at a discount or premium relative to analyst targets and its 52-week range?
-3. What do the current Technicals (RSI/MA) suggest versus the Fundamentals (Margins/P/E)?
+1. **Relative Strength**: Is the stock outperforming or underperforming the S&P 500? What does this tell us?
+2. **Event Risk**: How should the upcoming Earnings Date ({analysis_data['next_earnings']}) affect a trader's decision right now?
+3. **Valuation vs. Momentum**: Contrast the current Fundamentals (P/E, Margins) with Technicals (RSI/MA).
 4. Provide 3 high-conviction "Buy Reasons" and 3 "Key Risks".
 5. Give a final outlook for the next 5-10 trading days.
 """
